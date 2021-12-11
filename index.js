@@ -1,6 +1,6 @@
 const fs = require('fs');
 const readline = require('readline');
-const {google} = require('googleapis');
+const { google } = require('googleapis');
 
 // If modifying these scopes, delete token.json.
 const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
@@ -14,8 +14,8 @@ fs.readFile('credentials.json', (err, content) => {
   if (err) return console.log('Error loading client secret file:', err);
   // Authorize a client with credentials, then call the Gmail API.
   //authorize(JSON.parse(content), listLabels);
-  authorize(JSON.parse(content), findMessages);
-  
+  authorize(JSON.parse(content), getProfile);
+
 });
 
 /**
@@ -25,9 +25,9 @@ fs.readFile('credentials.json', (err, content) => {
  * @param {function} callback The callback to call with the authorized client.
  */
 function authorize(credentials, callback) {
-  const {client_secret, client_id, redirect_uris} = credentials.installed;
+  const { client_secret, client_id, redirect_uris } = credentials.installed;
   const oAuth2Client = new google.auth.OAuth2(
-      client_id, client_secret, redirect_uris[0]);
+    client_id, client_secret, redirect_uris[0]);
 
   // Check if we have previously stored a token.
   fs.readFile(TOKEN_PATH, (err, token) => {
@@ -74,7 +74,7 @@ function getNewToken(oAuth2Client, callback) {
  * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
  */
 function listLabels(auth) {
-  const gmail = google.gmail({version: 'v1', auth});
+  const gmail = google.gmail({ version: 'v1', auth });
   gmail.users.labels.list({
     userId: 'me',
   }, (err, res) => {
@@ -93,29 +93,38 @@ function listLabels(auth) {
 function findMessages(auth) {
   var gmail = google.gmail('v1');
   gmail.users.messages.list({
-  auth: auth,
-  userId: 'me',
-  maxResults: 10,
-  q:""
-}, function(err, response) {
+    auth: auth,
+    userId: 'me',
+    maxResults: 10,
+    q: ""
+  }, function (err, response) {
     //console.log(response);
     console.log("++++++++++++++++++++++++++");
-    printMessage(response.data.messages,auth);
+    printMessage(response.data.messages, auth);
   });
 }
-function printMessage(messageID,auth) {
+function getProfile(auth) {
+  var gmail = google.gmail('v1');
+  gmail.users.getProfile({
+    auth: auth,
+    userId: 'me'
+  }, function (err, response) {
+    console.log(response.data);
+  })
+}
+function printMessage(messageID, auth) {
   var gmail = google.gmail('v1');
   gmail.users.messages.get({
-  auth: auth,
-  userId: 'me',
-  id:messageID[0].id
-}, function(err, response) {
+    auth: auth,
+    userId: 'me',
+    id: messageID[0].id
+  }, function (err, response) {
     console.log(response);
-    messageID.splice(0,1);
-    if(messageID.length>0)
-     printMessage(messageID,auth);
-   else {
-     console.log("All Done");
-   }
-});
+    messageID.splice(0, 1);
+    if (messageID.length > 0)
+      printMessage(messageID, auth);
+    else {
+      console.log("All Done");
+    }
+  });
 }
